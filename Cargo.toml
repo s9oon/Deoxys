@@ -1,15 +1,10 @@
 [workspace]
 resolver = "3"
-members = ["backend", "shared", "desktop/src-tauri"]
+members = ["backend", "shared"]
+# The Tauri app is its own Cargo project (own Cargo.lock / target / profile).
+# It still uses shared/ through a path dependency.
+exclude = ["desktop"]
 
 [workspace.dependencies]
 shared = { path = "shared" }
 serde = { version = "1", features = ["derive"] }
-
-# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = 3
-panic = "abort"
-strip = true
