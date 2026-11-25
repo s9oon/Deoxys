@@ -1,0 +1,52 @@
+# Postgres for the backend. Apply once; the backend's Deployment is separate.
+# Needs the deoxys-db Secret first: bash scripts/secret.sh
+
+# Stable DNS name inside the cluster: postgres:5432 (the host in DATABASE_URL)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres          # must match the pod labels below
+  ports:
+    - port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1              # one instance; more would be separate, unsynced databases
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17   # official image; never :latest (major upgrades break the data dir)
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: deoxys-db
+                  key: POSTGRES_PASSWORD
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  # Each pod gets its own persistent disk, kept across restarts
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
