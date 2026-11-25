@@ -9,4 +9,4 @@ spec:
     - name: backend
       image: ghcr.io/s9oon/deoxys-backend:latest #To be changed as scale
       ports:
-        - containerPort: 80
+        - containerPort: 3000
