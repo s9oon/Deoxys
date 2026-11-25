@@ -8,17 +8,21 @@ FROM rust:1-trixie AS chef
 RUN cargo install cargo-chef --locked --version ^0.1
 WORKDIR /app
 
-# ---- planner: work out the dependency list for the whole workspace ----
+# ---- planner: work out the dependency list for the workspace ----
 FROM chef AS planner
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY shared ./shared
+COPY backend ./backend
 RUN cargo chef prepare --recipe-path recipe.json
 
 # ---- builder: deps first (cached), then your code ----
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-# Only the backend's dependencies (skips Tauri). Rebuilds only when Cargo.toml/Cargo.lock change.
+# Dependencies only. Rebuilds only when Cargo.toml/Cargo.lock change.
 RUN cargo chef cook --release --locked --package backend --recipe-path recipe.json
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY shared ./shared
+COPY backend ./backend
 RUN cargo build --release --locked --package backend
 
 # ---- runtime: just the binary ----
