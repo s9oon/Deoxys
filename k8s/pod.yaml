@@ -1,3 +1,6 @@
+# DEPRECATED: Replaced by deployment.yaml
+# Do not use for new deployments.
+
 apiVersion: v1
 kind: Pod
 metadata:
