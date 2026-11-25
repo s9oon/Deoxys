@@ -8,6 +8,7 @@ spec:
   containers:
     - name: backend
       image: ghcr.io/s9oon/deoxys-backend:latest #To be changed as scale
+      imagePullPolicy: Always
       env:
         - name: PORT
           value: "3000"
