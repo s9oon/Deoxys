@@ -1,12 +1,15 @@
-use axum::{
-    routing::get,
-    Router,
-};
+use axum::{routing::get, Json, Router};
+use shared::Hello;
+
+async fn hello() -> Json<Hello> {
+    Json(Hello { message: "Hello, World!".to_string() })
+}
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+    let app = Router::new().route("/", get(hello));
 
     // Set env variable for port
     let port = match std::env::var("PORT") {
