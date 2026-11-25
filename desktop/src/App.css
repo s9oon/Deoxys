@@ -21,3 +21,9 @@ body {
     background-color: #2f2f2f;
   }
 }
+
+.error {
+  color: #d33;
+  max-width: 80%;
+  text-align: center;
+}
