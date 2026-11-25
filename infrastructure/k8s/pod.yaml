@@ -1,0 +1,19 @@
+# DEPRECATED: Replaced by deployment.yaml
+# Do not use for new deployments.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: deoxys-pod
+  labels:
+    app: deoxys
+spec:
+  containers:
+    - name: backend
+      image: ghcr.io/s9oon/deoxys-backend:latest #To be changed as scale
+      imagePullPolicy: Always
+      env:
+        - name: PORT
+          value: "3000"
+      ports:
+        - containerPort: 3000
