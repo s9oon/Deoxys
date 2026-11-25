@@ -8,5 +8,8 @@ spec:
   containers:
     - name: backend
       image: ghcr.io/s9oon/deoxys-backend:latest #To be changed as scale
+      env:
+        - name: PORT
+          value: "3000"
       ports:
         - containerPort: 3000
