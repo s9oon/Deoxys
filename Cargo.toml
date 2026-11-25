@@ -1,0 +1,10 @@
+[workspace]
+resolver = "3"
+members = ["backend", "shared"]
+# The Tauri app is its own Cargo project (own Cargo.lock / target / profile).
+# It still uses shared/ through a path dependency.
+exclude = ["desktop"]
+
+[workspace.dependencies]
+shared = { path = "shared" }
+serde = { version = "1", features = ["derive"] }

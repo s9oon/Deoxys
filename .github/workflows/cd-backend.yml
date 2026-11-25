@@ -7,6 +7,9 @@ on:
     branches: [main]
     paths:
       - "backend/**"
+      - "shared/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - ".github/workflows/cd-backend.yml"
 
 jobs:
@@ -25,11 +28,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Context is the repo root (the Cargo workspace); the Dockerfile lives in backend/.
       # Image names on GHCR must be lowercase.
-      # Result: ghcr.io/s9oon/deoxys-backend:latest and :<commit sha>
       - uses: docker/build-push-action@v6
         with:
-          context: backend
+          context: .
+          file: backend/Dockerfile
           push: true
           tags: |
             ghcr.io/s9oon/deoxys-backend:latest

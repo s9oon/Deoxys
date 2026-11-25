@@ -1,22 +1,26 @@
 name: CI (backend)
 
-# Runs on every push and pull request that touches the backend.
+# Runs on every push and pull request that touches the backend
+# or anything it depends on in the workspace.
 on:
   push:
     paths:
       - "backend/**"
+      - "shared/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - ".github/workflows/ci-backend.yml"
   pull_request:
     paths:
       - "backend/**"
+      - "shared/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - ".github/workflows/ci-backend.yml"
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
 
@@ -24,8 +28,7 @@ jobs:
 
       # Caches target/ and ~/.cargo between runs so builds are faster.
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: backend
 
-      - run: cargo build --locked
-      - run: cargo test --locked
+      # -p backend: only the backend (and shared), not the Tauri app.
+      - run: cargo build --locked -p backend
+      - run: cargo test --locked -p backend -p shared

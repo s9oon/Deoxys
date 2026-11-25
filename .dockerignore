@@ -1,0 +1,6 @@
+# Not part of the backend image; keeps the build context upload small.
+.git
+**/target
+**/node_modules
+**/.env
+desktop
