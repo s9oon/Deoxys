@@ -1,0 +1,31 @@
+name: CI (backend)
+
+# Runs on every push and pull request that touches the backend.
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci-backend.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci-backend.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Caches target/ and ~/.cargo between runs so builds are faster.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - run: cargo build --locked
+      - run: cargo test --locked
