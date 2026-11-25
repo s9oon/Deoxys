@@ -1,12 +1,14 @@
 import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
+import type { Hello } from "./ipc/Hello"; // generated from shared::Hello
 import "./App.css";
 
 function App() {
-  const [message, setMessage] = createSignal("");
+  const [message, setMessage] = createSignal("loading...");
 
-  // Calls the `greet` function in src-tauri/src/lib.rs
-  invoke<string>("greet", { name: "World" }).then(setMessage);
+  invoke<Hello>("get_hello")
+    .then((hello) => setMessage(hello.message))
+    .catch((err) => setMessage(`error: ${err}`));
 
   return (
     <main class="container">
