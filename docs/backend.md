@@ -1,7 +1,7 @@
 # Backend
 
-An axum server in `backend/`. It currently has one route: `GET /` returns
-`{"message":"Hello, World!"}` (a `shared::Hello`).
+An axum server in `backend/`. It has one route: `GET /` returns
+`{"message":"Hello, World!"}`, a `shared::Hello`.
 
 ## Running locally
 
@@ -18,7 +18,7 @@ it's reachable from outside a container.
 |---|---|---|
 | `PORT` | `3000` | `std::env::var("PORT")` at startup |
 
-PowerShell example: `$env:PORT = "4000"; cargo run -p backend`
+In Kubernetes it's set by the Deployment's `env` (see [kubernetes.md](kubernetes.md)).
 
 ## Docker image
 
@@ -41,15 +41,8 @@ docker build -f backend/Dockerfile -t deoxys-backend:dev .
 - **Same Debian release in both stages** (trixie = Debian 13), so the glibc the binary was built against matches the one it runs on.
 - **`--package backend`** compiles only the backend's dependency tree. No Tauri crates are built.
 
-### Size
-
-About 29 MB compressed (what nodes download) and about 90 MB unpacked.
-Nearly all of it is `debian:trixie-slim`; the binary is under 2 MB. If size
-ever matters, use `gcr.io/distroless/cc-debian13`, or a static musl binary on
-`scratch`. The cost is losing the shell for `kubectl exec`.
-
-`docker image ls` may show about 120 MB. Docker Desktop counts the compressed
-and unpacked copies together.
+The image is about 29 MB compressed and about 90 MB unpacked. Nearly all of
+that is `debian:trixie-slim`; the binary is under 2 MB.
 
 ## CI/CD
 
@@ -61,23 +54,12 @@ Both workflows run on changes to `backend/**`, `shared/**`, the root
 | `ci-backend.yml` | every push and PR | `cargo build --locked -p backend`, `cargo test --locked -p backend -p shared` |
 | `cd-backend.yml` | push to `main` | builds `backend/Dockerfile` with the repo root as context, and pushes to GHCR |
 
-CD logs into GHCR with the built-in `GITHUB_TOKEN`, so no secret needs
-setting up. It pushes two tags:
+CD logs into GHCR with the built-in `GITHUB_TOKEN`, so no secret is needed.
+It pushes two tags:
 
 - `ghcr.io/s9oon/deoxys-backend:latest`
-- `ghcr.io/s9oon/deoxys-backend:<commit sha>`
+- `ghcr.io/s9oon/deoxys-backend:<commit sha>`. This one never changes, so it identifies an exact build.
 
-**Prefer the SHA tag when deploying.** `:latest` changes under you, can't be
-rolled back, and a new push doesn't trigger a rollout by itself. See
-[kubernetes.md](kubernetes.md#updating-to-a-new-image).
-
-GHCR packages are private by default. Either make the package public in its
-settings, or give the cluster pull credentials (see
-[kubernetes.md](kubernetes.md#private-images)).
-
-## Rust toolchain
-
-The Dockerfile uses `rust:1-trixie` (the latest stable 1.x) and CI uses
-`stable`. Pin both to the same `1.xx` version, plus a `rust-toolchain.toml`,
-once builds need to be reproducible exactly. Edition 2024 needs Rust 1.85 or
-newer.
+See [kubernetes.md](kubernetes.md#deploying-and-updating) for how each tag is
+rolled out, and [kubernetes.md](kubernetes.md#private-images) if the package
+is private.

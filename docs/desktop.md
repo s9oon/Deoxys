@@ -13,8 +13,11 @@ cargo run -p backend          # from the repo root
 cd desktop && npm run tauri dev
 ```
 
+Or use a backend already running in a cluster:
+`kubectl port-forward deployment/deoxys 3000:3000`.
+
 The window shows the message returned by the backend. If the backend isn't
-running, it shows `error: ...` instead.
+reachable, it shows `error: ...` instead.
 
 ## Frontend ↔ Rust (IPC)
 
@@ -37,7 +40,6 @@ invoke<Hello>("get_hello")
 
 - **Arguments and return values travel as JSON**, so they need `Serialize`/`Deserialize`.
 - **Errors come back as a rejected promise.** `Result<_, String>` is the simplest error type that serializes.
-- **The command name is a plain string in TypeScript.** Nothing checks it. `tauri-specta` can generate typed wrappers if that becomes a problem.
 
 ## Talking to the backend
 
@@ -64,9 +66,10 @@ set env vars. The value is baked into the binary when it's built.
 
 ```sh
 cd desktop
-$env:BACKEND_URL = "https://your-backend"   # PowerShell
-npm run tauri build
+BACKEND_URL=https://your-backend npm run tauri build
 ```
+
+(In PowerShell, set it first: `$env:BACKEND_URL = "https://your-backend"`.)
 
 Output goes to `desktop/src-tauri/target/release/bundle/`:
 
@@ -75,11 +78,5 @@ Output goes to `desktop/src-tauri/target/release/bundle/`:
 | `msi/*.msi` | WiX | IT and Group Policy deployment; Windows Installer runs it |
 | `nsis/*-setup.exe` | NSIS | handing to people; per-user installs without admin rights |
 
-`"targets": "all"` in `tauri.conf.json` builds both. Set it to `["nsis"]` or
-`["msi"]` to build only one.
-
-Notes:
-
-- **The first build is slow.** Tauri downloads WiX/NSIS, and the release profile (LTO, `codegen-units = 1`) compiles slowly.
-- **The installers aren't signed**, so Windows SmartScreen warns. Click More info → Run anyway. Removing the warning needs a code-signing certificate.
-- **`productName` is still `"desktop"`** and `identifier` is `com.harry.desktop`. Rename both before shipping.
+`"targets": "all"` in `tauri.conf.json` builds both. The release profile
+(LTO, `codegen-units = 1`, `strip`) lives in `desktop/src-tauri/Cargo.toml`.

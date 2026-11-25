@@ -23,9 +23,8 @@ Both the struct and its fields must be `pub`, or other crates can't use them.
 | frontend (`desktop/src`) | generated `ipc/Hello.ts` | the type of `invoke<Hello>(...)` |
 
 Because backend and desktop compile against the same struct, renaming a field
-breaks the build on both sides until both are fixed. That's the point: the
-compiler keeps the API in sync instead of an OpenAPI spec. (We don't use
-utoipa/OpenAPI; add it only if a non-Rust client needs the API.)
+breaks the build on both sides until both are fixed. The compiler
+keeps the API in sync.
 
 ## The Cargo workspace
 

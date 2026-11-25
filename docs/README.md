@@ -6,7 +6,7 @@ How the pieces of this repo fit together and how to work on them.
 |---|---|
 | [shared-types.md](shared-types.md) | The `shared/` crate, the Cargo workspace, and generating TypeScript types with ts-rs |
 | [backend.md](backend.md) | Running the backend, its Docker image, and CI/CD to GHCR |
-| [kubernetes.md](kubernetes.md) | The `k8s/` manifests, minikube on Windows, deploying and updating |
+| [kubernetes.md](kubernetes.md) | The `k8s/` manifests, how they map onto any cluster, and deploying |
 | [desktop.md](desktop.md) | The Tauri app: dev, IPC, `BACKEND_URL`, building installers |
 
 ## How a request flows
