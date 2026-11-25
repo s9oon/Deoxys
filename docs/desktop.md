@@ -16,8 +16,10 @@ cd desktop && npm run tauri dev
 Or use a backend already running in a cluster:
 `kubectl port-forward deployment/deoxys 3000:3000`.
 
-The window shows the message returned by the backend. If the backend isn't
-reachable, it shows `error: ...` instead.
+On startup the app calls `get_hello` and `check_health` together. If both
+succeed it shows a blank window with `Ok!` in the centre. If either fails it
+shows the error in red instead and logs it with `console.error` (visible in
+the webview devtools). Nothing is logged when both succeed.
 
 ## Frontend ↔ Rust (IPC)
 
@@ -28,8 +30,11 @@ The frontend calls Rust functions by name. There's no HTTP between them.
 #[tauri::command]
 async fn get_hello() -> Result<Hello, String> { ... }
 
+#[tauri::command]
+async fn check_health() -> Result<(), String> { ... }  // Err on non-2xx
+
 // registered in run():
-.invoke_handler(tauri::generate_handler![greet, get_hello])
+.invoke_handler(tauri::generate_handler![greet, get_hello, check_health])
 ```
 
 ```ts
@@ -43,8 +48,9 @@ invoke<Hello>("get_hello")
 
 ## Talking to the backend
 
-Only the Rust side calls the backend, using `reqwest`. The response is
-parsed straight into `shared::Hello`.
+Only the Rust side calls the backend, using `reqwest`. The `GET /` response
+is parsed straight into `shared::Hello`. `GET /health` has no body, so it has
+no shared type: `check_health` only looks at the status code.
 
 `BACKEND_URL` is read at **compile time**:
 
@@ -80,3 +86,22 @@ Output goes to `desktop/src-tauri/target/release/bundle/`:
 
 `"targets": "all"` in `tauri.conf.json` builds both. The release profile
 (LTO, `codegen-units = 1`, `strip`) lives in `desktop/src-tauri/Cargo.toml`.
+
+## Name and icon
+
+Set in `desktop/src-tauri/tauri.conf.json`:
+
+| Key | Value | Used for |
+|---|---|---|
+| `productName` | `Deoxys` | installer and exe names, the installed app's name |
+| `identifier` | `com.s9oon.deoxys` | the app's permanent ID: Windows install/upgrade key and the app-data folder. Changing it makes a new app. |
+| `app.windows[].title` | `Deoxys` | window title bar |
+
+The icons in `src-tauri/icons/` are generated from `desktop/app-icon.png`, which is also the page favicon in `index.html`. The window's title-bar and taskbar icon come from `icons/icon.ico`:
+
+```sh
+cd desktop
+npm run tauri icon
+```
+
+It also writes `icons/android/` and `icons/ios/`, which this app doesn't use.

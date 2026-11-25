@@ -22,11 +22,22 @@ async fn get_hello() -> Result<Hello, String> {
         .map_err(|e| e.to_string())
 }
 
+// /health has no body, only a status code, so there's no shared type for it.
+#[tauri::command]
+async fn check_health() -> Result<(), String> {
+    reqwest::get(format!("{BACKEND_URL}/health"))
+        .await
+        .map_err(|e| e.to_string())?
+        .error_for_status()       // 503 etc. → Err; 200 → Ok
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_hello])
+        .invoke_handler(tauri::generate_handler![greet, get_hello, check_health])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

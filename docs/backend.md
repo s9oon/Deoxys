@@ -1,12 +1,26 @@
 # Backend
 
-An axum server in `backend/`. It has one route: `GET /` returns
-`{"message":"Hello, World!"}`, a `shared::Hello`.
+An axum server in `backend/`, backed by Postgres through sqlx.
+
+| Route | Returns |
+|---|---|
+| `GET /` | `{"message":"Hello, World!"}`, a `shared::Hello` |
+| `GET /health` | `200` if `SELECT 1` succeeds on the database, else `503`. No body. |
+
+## State
+
+`backend/src/state.rs` holds `AppState { database: PgPool }`. `main` creates it
+once at startup, wraps it in an `Arc`, and passes it to the router with
+`.with_state(...)`. A handler gets it by taking `State<Arc<AppState>>` as an
+argument. Handlers that don't need it (like `GET /`) leave it out.
 
 ## Running locally
 
+It needs a Postgres to connect to. Locally, the quickest is a container:
+
 ```sh
-cargo run -p backend
+docker run -d --name pg -e POSTGRES_PASSWORD=dev -p 5432:5432 postgres:17
+DATABASE_URL=postgres://postgres:dev@localhost:5432/postgres cargo run -p backend
 ```
 
 It listens on `0.0.0.0:3000`. It binds `0.0.0.0` rather than `127.0.0.1` so
@@ -17,8 +31,14 @@ it's reachable from outside a container.
 | Env var | Default | Read with |
 |---|---|---|
 | `PORT` | `3000` | `std::env::var("PORT")` at startup |
+| `DATABASE_URL` | none, required | `std::env::var("DATABASE_URL")` at startup |
 
-In Kubernetes it's set by the Deployment's `env` (see [kubernetes.md](kubernetes.md)).
+`DATABASE_URL` has the form `postgres://USER:PASSWORD@HOST:PORT/DATABASE`.
+Without it the backend exits with `Error: "DATABASE_URL not set"`. If the
+database can't be reached, `PgPool::connect` gives up after about 30 s with
+`Error: PoolTimedOut`.
+
+In Kubernetes both are set by the Deployment's `env` (see [kubernetes.md](kubernetes.md)).
 
 ## Docker image
 

@@ -19,5 +19,10 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: deoxys-db
+                  key: DATABASE_URL
           ports:
             - containerPort: 3000
