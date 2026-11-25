@@ -1,0 +1,13 @@
+# Docker build context is the repo root, so keep it small.
+.git
+**/target
+**/node_modules
+**/.env
+
+# The backend image never builds the desktop app.
+# Cargo only needs the desktop crate's manifest to load the workspace,
+# so desktop changes don't bust the backend image cache.
+desktop/*
+!desktop/src-tauri
+desktop/src-tauri/*
+!desktop/src-tauri/Cargo.toml
