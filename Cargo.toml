@@ -8,3 +8,6 @@ exclude = ["desktop"]
 [workspace.dependencies]
 shared = { path = "shared" }
 serde = { version = "1", features = ["derive"] }
+
+[workspace.package]
+version = "0.3.0"
