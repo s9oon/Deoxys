@@ -1,8 +1,8 @@
 mod state;
+mod websocket;
 
 use std::sync::Arc;
-use sqlx::PgPool;
-use axum::{http::StatusCode, routing::get, Json, Router, extract::State};
+use axum::{http::StatusCode, routing::{get, any}, Json, Router, extract::State};
 use shared::Hello;
 use state::AppState;
 
@@ -23,13 +23,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let database_url = std::env::var("DATABASE_URL").map_err(|_| "DATABASE_URL not set")?;
 
-    let state = Arc::new(AppState {
-        database: PgPool::connect(&database_url).await?,
-    });
+    let state = Arc::new(AppState::connect(&database_url).await?);
 
     let app = Router::new()
         .route("/", get(hello))
         .route("/health", get(health))
+        .route("/ws", any(websocket::handler))
         .with_state(state);
 
     // Listen on all interfaces so it's reachable inside a container
