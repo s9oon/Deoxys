@@ -10,7 +10,7 @@
     "serve": "vite preview",
     "tauri": "tauri"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "solid-js": "^2.0.3",
     "@solidjs/web": "^2.0.3",

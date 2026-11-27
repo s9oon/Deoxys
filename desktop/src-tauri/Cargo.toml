@@ -3,6 +3,7 @@ name = "desktop"
 version = "0.3.0"
 description = "Deoxys desktop app"
 authors = ["s9oon"]
+license = "AGPL-3.0-only"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
