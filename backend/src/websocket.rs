@@ -1,3 +1,6 @@
+// Structure adapted from the axum websockets example (MIT):
+// https://github.com/tokio-rs/axum/blob/main/examples/websockets/src/main.rs
+
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
