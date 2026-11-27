@@ -1,8 +1,9 @@
 //imports
+mod hub;
 mod state;
 mod websocket;
 
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 use axum::{http::StatusCode, routing::{get, any}, Json, Router, extract::State};
 use shared::Hello;
 use state::AppState;
@@ -39,6 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Listen on all interfaces so it's reachable inside a container
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}")).await?;
-    axum::serve(listener, app).await?;
+    // with_connect_info lets handlers extract the client's address (ConnectInfo<SocketAddr>)
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
     Ok(())
 }
