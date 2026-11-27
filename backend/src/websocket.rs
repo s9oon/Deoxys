@@ -17,9 +17,7 @@ async fn handle_socket(mut socket: WebSocket) {
                     continue; // not valid JSON: skip it
                 };
 
-                let reply = match incoming {
-                    ClientMsg::Chat { text } => ServerMsg::Chat { text },
-                };
+                let reply = handle_message(incoming);
 
                 let json = serde_json::to_string(&reply).unwrap();
                 if socket.send(Message::Text(json.into())).await.is_err() {
@@ -30,5 +28,12 @@ async fn handle_socket(mut socket: WebSocket) {
             Some(Err(_)) => return, // failed to receive from client
             None => return,         // client closed the connection
         }
+    }
+}
+
+// Every message type is listed here; the compiler errors if one is missing
+fn handle_message(msg: ClientMsg) -> ServerMsg {
+    match msg {
+        ClientMsg::Chat { text } => ServerMsg::Chat { text },
     }
 }
