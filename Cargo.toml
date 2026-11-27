@@ -11,3 +11,4 @@ serde = { version = "1", features = ["derive"] }
 
 [workspace.package]
 version = "0.3.0"
+license = "AGPL-3.0-only"
