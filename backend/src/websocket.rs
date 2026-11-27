@@ -12,27 +12,24 @@ pub async fn handler(ws: WebSocketUpgrade) -> Response {
 
 // Runs for one client's connection until it closes
 async fn handle_socket(mut socket: WebSocket) {
-    loop {
-        match socket.recv().await {
-            Some(Ok(Message::Text(text))) => {
+    // Ends the loop on a receive error or when the client closes the connection
+    while let Some(Ok(msg)) = socket.recv().await {
+        let text = match msg {
+            Message::Text(text) => text,
+            _ => continue, // not a text message: ignore
+        };
 
-                // Deserialize client message
-                let Ok(incoming) = serde_json::from_str::<ClientMsg>(text.as_str()) else {
-                    continue; // not a valid ClientMsg
-                };
+        let incoming = match serde_json::from_str::<ClientMsg>(text.as_str()) {
+            Ok(incoming) => incoming,
+            Err(_) => continue, // not a valid ClientMsg: skip it
+        };
 
-                let reply = handle_message(incoming);
+        let reply = handle_message(incoming);
 
-                // Serialize "reply"
-                let json = serde_json::to_string(&reply).unwrap();
-                if socket.send(Message::Text(json.into())).await.is_err() {
-                    return; // failed to send to client
-                }
-            }
-
-            Some(Ok(_)) => {}       // not a text message: ignore
-            Some(Err(_)) => return, // failed to receive from client
-            None => return,         // client closed the connection
+        // Serialize the reply and send it back
+        let json = serde_json::to_string(&reply).unwrap();
+        if socket.send(Message::Text(json.into())).await.is_err() {
+            return; // failed to send to client
         }
     }
 }
