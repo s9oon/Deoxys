@@ -1,4 +1,5 @@
 //imports
+mod hub;
 mod state;
 mod websocket;
 

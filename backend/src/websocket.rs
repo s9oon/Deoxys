@@ -16,7 +16,8 @@ use axum::extract::connect_info::ConnectInfo;
 // Allows splitting the websocket stream into separate TX and RX branches
 use futures_util::{sink::SinkExt, stream::StreamExt};
 
-use shared::{ClientMsg, ServerMsg};
+use crate::hub::{Hub, HubError};
+use shared::{ChatHub, ClientMsg, ServerMsg};
 
 /// The handler for the HTTP request (this gets called when the HTTP request lands at the start
 /// of websocket negotiation). After this completes, the actual switching from HTTP to
@@ -41,6 +42,9 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr) {
     // the send task is the only thing that writes to the socket
     let (tx, mut rx) = mpsc::channel::<ServerMsg>(32);
 
+    // This connection's hub; replies go through `tx` to the send task
+    let hub = Hub::new(tx);
+
     // Send task: ServerMsg from the channel -> JSON -> socket
     let mut send_task = tokio::spawn(async move {
         let mut cnt = 0;
@@ -62,7 +66,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr) {
         while let Some(Ok(msg)) = receiver.next().await {
             cnt += 1;
             // handle message and break if instructed to do so
-            if process_message(msg, who, &tx).await.is_break() {
+            if process_message(msg, who, &hub).await.is_break() {
                 break;
             }
         }
@@ -91,13 +95,9 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr) {
     println!("Websocket context {who} destroyed");
 }
 
-/// Handles one frame: Text is decoded as a ClientMsg and replied to, Close ends the connection,
-/// the rest are logged.
-async fn process_message(
-    msg: Message,
-    who: SocketAddr,
-    tx: &mpsc::Sender<ServerMsg>,
-) -> ControlFlow<(), ()> {
+/// Handles one frame: Text is decoded as a ClientMsg and dispatched to the hub,
+/// Close ends the connection, the rest are logged.
+async fn process_message(msg: Message, who: SocketAddr, hub: &Hub) -> ControlFlow<(), ()> {
     match msg {
         Message::Text(t) => {
             let Ok(incoming) = serde_json::from_str::<ClientMsg>(t.as_str()) else {
@@ -105,11 +105,17 @@ async fn process_message(
                 return ControlFlow::Continue(());
             };
 
-            let reply = handle_message(incoming);
-
-            // Err means the send task has stopped, so the connection is done
-            if tx.send(reply).await.is_err() {
-                return ControlFlow::Break(());
+            // Each error decides what happens to the connection
+            match hub.handle(incoming).await {
+                Ok(()) => {}
+                Err(HubError::ClientGone) => return ControlFlow::Break(()),
+                Err(HubError::Db(e)) => {
+                    println!(">>> {who} db error: {e}"); // full detail stays on the server
+                    let msg = ServerMsg::Error { message: "server error".into() };
+                    if hub.reply(msg).await.is_err() {
+                        return ControlFlow::Break(());
+                    }
+                }
             }
         }
         Message::Binary(d) => {
@@ -138,11 +144,4 @@ async fn process_message(
         }
     }
     ControlFlow::Continue(())
-}
-
-// App logic: one arm per ClientMsg variant; the compiler errors if one is missing
-fn handle_message(msg: ClientMsg) -> ServerMsg {
-    match msg {
-        ClientMsg::Chat { text } => ServerMsg::Chat { text }, // echo for now
-    }
 }
