@@ -9,6 +9,7 @@ on:
       - "shared/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - "desktop/src/ipc/**"
       - ".github/workflows/ci-backend.yml"
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - "shared/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - "desktop/src/ipc/**"
       - ".github/workflows/ci-backend.yml"
 
 jobs:
@@ -32,3 +34,15 @@ jobs:
       # -p backend: only the backend (and shared), not the Tauri app.
       - run: cargo build --locked -p backend
       - run: cargo test --locked -p backend -p shared
+
+      # Fails if desktop/src/ipc is out of date with shared/.
+      # Regenerates the TypeScript types, then errors if that changed or added any file.
+      # Fix: run `cargo test -p shared --features ts` locally and commit the result.
+      - run: cargo test --locked -p shared --features ts
+      - name: Check TypeScript types are up to date
+        run: |
+          if [ -n "$(git status --porcelain desktop/src/ipc)" ]; then
+            git status --short desktop/src/ipc
+            git diff desktop/src/ipc
+            exit 1
+          fi
